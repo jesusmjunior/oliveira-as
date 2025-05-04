@@ -3,10 +3,8 @@ import streamlit as st
 import sqlite3
 from datetime import datetime
 import json
-import base64
+import os
 from pathlib import Path
-import io
-import hashlib
 
 # Configuração da página
 st.set_page_config(
@@ -95,11 +93,20 @@ def load_css():
     </style>
     """, unsafe_allow_html=True)
 
-# Inicializar banco de dados
+# Garantir que o banco de dados existe
 def init_db():
-    conn = sqlite3.connect('juridico.db')
+    # Criar diretório se não existir
+    db_dir = Path("data")
+    db_dir.mkdir(exist_ok=True)
+    
+    # Caminho do banco de dados
+    db_path = db_dir / "juridico.db"
+    
+    # Conectar ou criar banco de dados
+    conn = sqlite3.connect(str(db_path))
     c = conn.cursor()
     
+    # Criar tabela se não existir
     c.execute('''
         CREATE TABLE IF NOT EXISTS documentos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,6 +124,11 @@ def init_db():
     
     conn.commit()
     conn.close()
+    return str(db_path)
+
+# Obter caminho do banco de dados
+def get_db_path():
+    return str(Path("data") / "juridico.db")
 
 # Templates de documentos jurídicos
 TEMPLATES = {
@@ -228,59 +240,13 @@ TEMPLATES = {
             </div>
         </div>
         """
-    },
-    "parecer_juridico": {
-        "nome": "Parecer Jurídico",
-        "campos": ["consulente", "assunto", "consulta", "analise", "conclusao"],
-        "formato": """
-        <div class="document-preview">
-            <div class="watermark">OLIVEIRA'S</div>
-            <div style="text-align: center; margin-bottom: 40px;">
-                <h2>PARECER JURÍDICO</h2>
-                <p>Parecer nº ___/2024</p>
-            </div>
-            
-            <div style="margin-bottom: 30px;">
-                <p><strong>CONSULENTE:</strong> {consulente}</p>
-                <p><strong>ASSUNTO:</strong> {assunto}</p>
-                <p><strong>DATA:</strong> {data}</p>
-            </div>
-            
-            <div>
-                <h3>I - DA CONSULTA</h3>
-                <p style="text-align: justify; line-height: 1.8;">{consulta}</p>
-            </div>
-            
-            <div>
-                <h3>II - DA ANÁLISE JURÍDICA</h3>
-                <p style="text-align: justify; line-height: 1.8;">{analise}</p>
-            </div>
-            
-            <div>
-                <h3>III - DA CONCLUSÃO</h3>
-                <p style="text-align: justify; line-height: 1.8;">{conclusao}</p>
-            </div>
-            
-            <p style="text-align: center; margin-top: 40px;">
-                É o parecer, salvo melhor juízo.
-            </p>
-            
-            <p style="text-align: center; margin-top: 40px;">São Luís/MA, {data}</p>
-            
-            <div style="text-align: center; margin-top: 60px;">
-                <div class="signature-line" style="margin: 0 auto;"></div>
-                <p><strong>JESUS MARTINS OLIVEIRA</strong><br>
-                Advogado<br>
-                OAB/MA 25.019</p>
-            </div>
-        </div>
-        """
     }
 }
 
 # Funções do banco de dados
 def salvar_documento(tipo, titulo, conteudo, cliente=None, metadata=None, background_image=None):
-    conn = sqlite3.connect('juridico.db')
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -298,7 +264,8 @@ def salvar_documento(tipo, titulo, conteudo, cliente=None, metadata=None, backgr
     return doc_id
 
 def listar_documentos(tipo=None, cliente=None):
-    conn = sqlite3.connect('juridico.db')
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     if tipo and cliente:
@@ -325,9 +292,9 @@ def listar_documentos(tipo=None, cliente=None):
             'cliente': doc[4],
             'data_criacao': doc[5],
             'data_modificacao': doc[6],
-            'status': doc[7],
-            'metadata': doc[8],
-            'background_image': doc[9]
+            'status': doc[7] if len(doc) > 7 else None,
+            'metadata': doc[8] if len(doc) > 8 else None,
+            'background_image': doc[9] if len(doc) > 9 else None
         })
     
     return docs_list
@@ -335,7 +302,9 @@ def listar_documentos(tipo=None, cliente=None):
 # Interface principal
 def main():
     load_css()
-    init_db()
+    
+    # Inicializar banco de dados
+    db_path = init_db()
     
     # Sidebar
     with st.sidebar:
@@ -391,7 +360,7 @@ def main():
         
         # Criar formulário dinâmico
         for campo in template["campos"]:
-            if campo in ["fatos", "direito", "pedidos", "objeto", "consulta", "analise", "conclusao"]:
+            if campo in ["fatos", "direito", "pedidos", "objeto"]:
                 campos_valores[campo] = st.text_area(
                     campo.replace("_", " ").title(),
                     height=150
@@ -468,7 +437,7 @@ def main():
         
         if documentos:
             for doc in documentos:
-                with st.expander(f"📄 {doc['titulo']} - {doc['data_criacao'][:10]}"):
+                with st.expander(f"📄 {doc['titulo']} - {doc['data_criacao'][:10] if doc['data_criacao'] else 'Sem data'}"):
                     st.markdown(doc['conteudo'], unsafe_allow_html=True)
                     
                     st.download_button(
