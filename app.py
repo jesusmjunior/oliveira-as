@@ -191,7 +191,7 @@ TEMPLATES = {
                 Pelo presente instrumento particular de Contrato de Prestação de Serviços Advocatícios,
                 de um lado <strong>{contratante}</strong>, inscrito(a) no CPF sob nº {cpf_contratante},
                 doravante denominado(a) CONTRATANTE, e de outro lado, <strong>OLIVEIRA'S ADVOCACIA</strong>,
-                com sede na Rua das Palmeiras, nº 500, Sala 402, Centro, São Luís/MA,
+                com sede na Rua dos Guarás, Casa 01, Q 17, Ponta do Farol, São Luís/MA, CEP 65077-460,
                 neste ato representada por seu sócio administrador Dr. JESUS MARTINS OLIVEIRA,
                 OAB/MA 25.019, doravante denominada CONTRATADA, têm entre si justo e contratado o seguinte:
             </p>
@@ -225,6 +225,53 @@ TEMPLATES = {
                     <div class="signature-line"></div>
                     <p>OLIVEIRA'S ADVOCACIA<br>CONTRATADA</p>
                 </div>
+            </div>
+        </div>
+        """
+    },
+    "parecer_juridico": {
+        "nome": "Parecer Jurídico",
+        "campos": ["consulente", "assunto", "consulta", "analise", "conclusao"],
+        "formato": """
+        <div class="document-preview">
+            <div class="watermark">OLIVEIRA'S</div>
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h2>PARECER JURÍDICO</h2>
+                <p>Parecer nº ___/2024</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <p><strong>CONSULENTE:</strong> {consulente}</p>
+                <p><strong>ASSUNTO:</strong> {assunto}</p>
+                <p><strong>DATA:</strong> {data}</p>
+            </div>
+            
+            <div>
+                <h3>I - DA CONSULTA</h3>
+                <p style="text-align: justify; line-height: 1.8;">{consulta}</p>
+            </div>
+            
+            <div>
+                <h3>II - DA ANÁLISE JURÍDICA</h3>
+                <p style="text-align: justify; line-height: 1.8;">{analise}</p>
+            </div>
+            
+            <div>
+                <h3>III - DA CONCLUSÃO</h3>
+                <p style="text-align: justify; line-height: 1.8;">{conclusao}</p>
+            </div>
+            
+            <p style="text-align: center; margin-top: 40px;">
+                É o parecer, salvo melhor juízo.
+            </p>
+            
+            <p style="text-align: center; margin-top: 40px;">São Luís/MA, {data}</p>
+            
+            <div style="text-align: center; margin-top: 60px;">
+                <div class="signature-line" style="margin: 0 auto;"></div>
+                <p><strong>JESUS MARTINS OLIVEIRA</strong><br>
+                Advogado<br>
+                OAB/MA 25.019</p>
             </div>
         </div>
         """
@@ -344,7 +391,7 @@ def main():
         
         # Criar formulário dinâmico
         for campo in template["campos"]:
-            if campo in ["fatos", "direito", "pedidos", "objeto"]:
+            if campo in ["fatos", "direito", "pedidos", "objeto", "consulta", "analise", "conclusao"]:
                 campos_valores[campo] = st.text_area(
                     campo.replace("_", " ").title(),
                     height=150
@@ -469,7 +516,7 @@ def main():
             email = st.text_input("Email", value="contato@oliveiras.adv.br")
         
         with col2:
-            endereco = st.text_area("Endereço", value="Rua das Palmeiras, nº 500\nSala 402, Centro\nSão Luís/MA\nCEP: 65.020-000")
+            endereco = st.text_area("Endereço", value="Rua dos Guarás, Casa 01, Q 17\nPonta do Farol\nSão Luís/MA\nCEP: 65077-460")
             oab = st.text_input("Registro OAB", value="OAB/MA 25.019")
         
         if st.button("💾 Salvar Configurações"):
